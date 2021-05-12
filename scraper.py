@@ -5,8 +5,7 @@ Released under the MIT license
 """
 from bs4 import BeautifulSoup
 import requests
-import lxml
-
+from selenium import webdriver
 
 """def store_data(dom):
     try:
@@ -15,16 +14,31 @@ import lxml
         print("Error: Something went wrong when trying to store data locally: ", e)"""
 
 
-def get_content(url):
+# function to handle dynamic page content loading - using Selenium
+def scroll_to_bottom(driver):
+    # define initial page height for 'while' loop
+    last_height = driver.execute_script("return document.body.scrollHeight")
+    while True:
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        new_height = driver.execute_script("return document.body.scrollHeight")
+        if new_height == last_height:
+            break
+        else:
+            last_height = new_height
+
+
+def get_content(driver, url):
     try:
-        return requests.get(url)
+        driver.get(url)
+        scroll_to_bottom(driver)
+        return driver.page_source
     except Exception as e:
         print("Error: Something went wrong when getting the content accessible from", url, "Details: ", e)
 
 
 def get_a_tags(dom):
     try:
-        soup = BeautifulSoup(dom.content, 'html.parser')
+        soup = BeautifulSoup(dom, 'html.parser')
         return soup.find_all('a', class_='css-ix8km1')
     except Exception as e:
         print("Error: Something went wrong when getting the <a> tags: ", e)
@@ -48,11 +62,12 @@ def main():
         "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
         "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
     ]
+    driver = webdriver.Firefox(executable_path="./geckodriver.exe")
     href_list_to_scrap = []
     for url in urls_to_scrape:
         a_tags = []
         while len(a_tags) < 12:
-            dom = get_content(url)
+            dom = get_content(driver, url)
             a_tags = get_a_tags(dom)
         product_links = get_product_links(a_tags)
         for product_link in product_links:
