@@ -48,21 +48,18 @@ def main():
         "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
         "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
     ]
+    href_list_to_scrap = []
     for url in urls_to_scrape:
-        print(url)
         a_tags = []
         while len(a_tags) < 12:
             dom = get_content(url)
-            if dom:
-                a_tags = get_a_tags(dom)
-                print(len(a_tags))
-            else:
-                print("No dom")
-            """product_pages = get_product_pages(product_links)
-            print(product_pages)"""
+            a_tags = get_a_tags(dom)
         product_links = get_product_links(a_tags)
-        print("Product links LEN: ", len(product_links))
-        print(product_links)
+        for product_link in product_links:
+            href_list_to_scrap.append(product_link)
+    for href in href_list_to_scrap:
+        print(href)
+    print(len(href_list_to_scrap))
 
 
 if __name__ == '__main__':
