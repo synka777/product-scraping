@@ -4,8 +4,8 @@ All Rights Reserved.
 Released under the MIT license
 """
 from bs4 import BeautifulSoup
-import requests
 from selenium import webdriver
+from time import sleep
 
 """def store_data(dom):
     try:
@@ -19,18 +19,21 @@ def scroll_to_bottom(driver):
     # define initial page height for 'while' loop
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        driver.execute_script("window.scrollBy(0, document.body.scrollHeight/3);")
         new_height = driver.execute_script("return document.body.scrollHeight")
+        print("New height: ", new_height)
         if new_height == last_height:
             break
         else:
             last_height = new_height
+            sleep(5)
 
 
 def get_content(driver, url):
     try:
         driver.get(url)
         scroll_to_bottom(driver)
+        sleep(5)
         return driver.page_source
     except Exception as e:
         print("Error: Something went wrong when getting the content accessible from", url, "Details: ", e)
@@ -69,12 +72,15 @@ def main():
         while len(a_tags) < 12:
             dom = get_content(driver, url)
             a_tags = get_a_tags(dom)
+            print("A tags qty: ", len(a_tags))
         product_links = get_product_links(a_tags)
+        print("Products qty", len(product_links))
         for product_link in product_links:
             href_list_to_scrap.append(product_link)
     for href in href_list_to_scrap:
         print(href)
     print(len(href_list_to_scrap))
+    driver.close()
 
 
 if __name__ == '__main__':
