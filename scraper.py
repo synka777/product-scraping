@@ -4,6 +4,7 @@ All Rights Reserved.
 Released under the MIT license
 """
 from bs4 import BeautifulSoup
+
 from selenium import webdriver
 from time import sleep
 
@@ -75,39 +76,51 @@ def get_product_details(driver, url):
     # This function will parse the dom and store each info in a map
     # It then will return this map to the main function
     product_page_dom = get_content(driver, url)
-    try:
-        print(url)
-        soup = BeautifulSoup(product_page_dom, 'html.parser')
-        title = soup.find('span', class_='css-1pgnl76 e65zztl0')
-        print("Title: ", title.text + "\n")
-        price = soup.find('b', class_='css-0')
-        print("Price: ", price.text + "\n")
-        pros = soup.find_all('img', class_='css-s6sd4y eanm77i0')
-        for pro in pros:
-            print("Pro: ", pro['alt'] + "\n")
-        description = soup.find('div', class_='css-184tt6k eanm77i0')
-        print("Description: ", description.text + "\n")
-        ingredients = soup.find('div', class_='css-1imcv2s')
-        print("Ingredients: ", ingredients.text + "\n")
-        how_to_use = soup.find(id='howtouse')
-        # print("How to use: ", how_to_use.children, "\n")
-        for stuff in how_to_use.children:
-            print(stuff)
-        pictures = soup.find_all('img', class_='css-1rovmyu e65zztl0')
-        for picture in pictures:
-            print("Picture: ", picture['src'] + "\n")
+    """try:"""
+    print(url)
+    soup = BeautifulSoup(product_page_dom, 'html.parser')
 
+    title = soup.find('span', class_='css-1pgnl76 e65zztl0')
+    print("Title: ", title.text + "\n")
+    price = soup.find('b', class_='css-0')
+    price_before_discount = soup.find('b', class_='css-vc9b2')
+    try:
+        print("Price: ", price.text + "\n")
     except Exception as e:
-        print("Error: Something went wrong when build the product object: ", e)
+        print(e)
+        print("Price: ", price_before_discount.text + "\n")
+    pros = soup.find_all('img', class_='css-s6sd4y eanm77i0')
+    for pro in pros:
+        print("Pro: ", pro['alt'] + "\n")
+    script = (soup.find('script', charset=True))
+    charset = script['charset']
+    description = soup.find('div', class_='css-184tt6k eanm77i0')
+
+    print("Desc with div and text: ", description.div.text.encode(charset), "\n")
+
+    ingredients = soup.find('div', class_='css-1imcv2s')
+    print("Ingredients: ", ingredients.text.encode(charset), "\n")
+    how_to_use = soup.find(id='howtouse')
+    # print("How to use: ", how_to_use.children, "\n")
+    if how_to_use:
+        print(how_to_use.div.div.text.encode(charset))
+    """for stuff in how_to_use.children:
+        print(stuff)"""
+    pictures = soup.find_all('img', class_='css-1rovmyu e65zztl0')
+    for picture in pictures:
+        print("Picture: ", picture['src'] + "\n")
+
+    """except Exception as e:
+        print("Error: Something went wrong when building the product object: ", e)"""
 
     # return
 
 
 def main():
     urls_to_scrape = [
-        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=1",
-        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=2",
-        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=1",
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=2",
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
         "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
     ]
     driver = webdriver.Firefox(executable_path="./geckodriver.exe")
