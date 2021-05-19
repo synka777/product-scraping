@@ -9,6 +9,13 @@ from time import sleep
 import csv
 
 
+def get_content(driver, url):
+    driver.get(url)
+    scroll_to_bottom(driver)
+    sleep(5)
+    return driver.page_source
+
+
 # function to handle dynamic page content loading - using Selenium
 def scroll_to_bottom(driver):
     # define initial page height for 'while' loop
@@ -25,13 +32,6 @@ def scroll_to_bottom(driver):
         else:
             last_height = new_height
             sleep(5)
-
-
-def get_content(driver, url):
-    driver.get(url)
-    scroll_to_bottom(driver)
-    sleep(5)
-    return driver.page_source
 
 
 def get_a_tags(dom):
@@ -53,11 +53,40 @@ def get_product_links(a_tags):
     return links
 
 
+def in_history(url, check_mode=False):
+    # Checks if the link has already been processed, if so return True
+    with open('./history.log', 'a+', newline='') as file:
+        # If the URL is in the history file, quit the function
+        if url in file:
+            file.close()
+            return True
+        # If it's not in the history file and if this function has been called without check mode, add it in the history
+        if not check_mode:
+            file.write(f"{url}\n")
+            file.close()
+            return True
+    # Else if the function is called with check_mode True it will return false.
+    # The goal is to use this function to check if an URL has been already processed without adding it in the meantime
+    return False
+
+
+def write_to_csv(url, name, category, price, pros, desc, ingredients, how_to_use, pictures):
+    with open('./products.csv', 'a+', newline='') as csv_file:
+        if name in csv_file:
+            csv_file.close()
+            return
+        products_csv = csv.writer(csv_file, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        products_csv.writerow([name, category, price, pros, desc, ingredients, how_to_use, pictures])
+        csv_file.close()
+        # Adds the URL corresponding to the processed product in the history
+        in_history(url)
+
+
 def get_product_details(driver, url):
     # This function will parse the dom and store each info in a map
     # It then will return this map to the main function
     product_page_dom = get_content(driver, url)
-    """try:"""
+
     print(url)
     soup = BeautifulSoup(product_page_dom, 'html.parser')
     script = (soup.find('script', charset=True))
@@ -112,24 +141,15 @@ def get_product_details(driver, url):
         pictures.append(picture_link)
 
     # Writes the info found for the product in a CSV file
-    write_to_csv(name, "Maquillage", price, pros, description, ingredients, how_to_use, pictures)
-
-
-def write_to_csv(name, category, price, pros, desc, ingredients, how_to_use, pictures):
-    with open('./products.csv', 'a+', newline='') as csv_file:
-        if name in csv_file:
-            return
-        products_csv = csv.writer(csv_file, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        products_csv.writerow([name, category, price, pros, desc, ingredients, how_to_use, pictures])
-        csv_file.close()
+    write_to_csv(url, name, "Maquillage", price, pros, description, ingredients, how_to_use, pictures)
 
 
 def main():
     urls_to_scrape = [
-        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=1",
-        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=2",
-        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
-        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=1"#,
+        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=2",
+        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
+        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
     ]
     driver = webdriver.Firefox(executable_path="./geckodriver.exe")
     href_list_to_scrap = []
@@ -144,8 +164,11 @@ def main():
             href_list_to_scrap.append(product_link)
     for href in href_list_to_scrap:
         # product = get_product_details(driver, href)
-        get_product_details(driver, href)
         # print(product.encode('utf-8'))
+        if not in_history(href, True):
+            get_product_details(driver, href)
+        else:
+            print("Skip: ", href)
     print(len(href_list_to_scrap))
     driver.close()
 
