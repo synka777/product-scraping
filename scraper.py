@@ -4,15 +4,9 @@ All Rights Reserved.
 Released under the MIT license
 """
 from bs4 import BeautifulSoup
-
 from selenium import webdriver
 from time import sleep
-
-"""def store_data(dom):
-    try:
-        pass
-    except Exception as e:
-        print("Error: Something went wrong when trying to store data locally: ", e)"""
+import csv
 
 
 # function to handle dynamic page content loading - using Selenium
@@ -31,19 +25,6 @@ def scroll_to_bottom(driver):
         else:
             last_height = new_height
             sleep(5)
-
-
-"""def expand_info(driver, class_name):
-    try:
-        expand_info_buttons = driver.find_element_by_class_name(class_name)
-        for button in expand_info_buttons:
-            if not button['aria-expanded']:
-                button.click()
-                continue
-            if button['aria-expanded'] == "false":
-                button.click()
-    except Exception as e:
-        print("Unable to find a button with class name ", class_name, ": ", e)"""
 
 
 def get_content(driver, url):
@@ -79,41 +60,68 @@ def get_product_details(driver, url):
     """try:"""
     print(url)
     soup = BeautifulSoup(product_page_dom, 'html.parser')
+    script = (soup.find('script', charset=True))
+    charset = script['charset']
 
-    title = soup.find('span', class_='css-1pgnl76 e65zztl0')
-    print("Title: ", title.text + "\n")
+    # Sets the name
+    name = soup.find('span', class_='css-1pgnl76 e65zztl0')
+    # print("Name: ", name.text + "\n")
+    name = name.text
+
+    # Sets the price
     price = soup.find('b', class_='css-0')
     price_before_discount = soup.find('b', class_='css-vc9b2')
     try:
-        print("Price: ", price.text + "\n")
+        # print("Price: ", price.text + "\n")
+        price = price.text
     except Exception as e:
-        print(e)
-        print("Price: ", price_before_discount.text + "\n")
-    pros = soup.find_all('img', class_='css-s6sd4y eanm77i0')
-    for pro in pros:
-        print("Pro: ", pro['alt'] + "\n")
-    script = (soup.find('script', charset=True))
-    charset = script['charset']
+        # print("Price: ", price_before_discount.text + "\n")
+        price = price_before_discount.text
+
+    # Sets the pros
+    pros_found = soup.find_all('img', class_='css-s6sd4y eanm77i0')
+    pros = []
+    for pro in pros_found:
+        # print("Pro: ", pro['alt'] + "\n")
+        pros.append(pro['alt'])
+
+    # Sets the description
     description = soup.find('div', class_='css-184tt6k eanm77i0')
+    # print("Desc with div and text: ", description.div.text.encode(charset), "\n")
+    description = description.div.text.encode(charset)
 
-    print("Desc with div and text: ", description.div.text.encode(charset), "\n")
-
+    # Sets the ingredients
     ingredients = soup.find('div', class_='css-1imcv2s')
-    print("Ingredients: ", ingredients.text.encode(charset), "\n")
+    # print("Ingredients: ", ingredients.text.encode(charset), "\n")
+    ingredients = ingredients.text.encode(charset)
+
+    # Sets the how to use section
     how_to_use = soup.find(id='howtouse')
-    # print("How to use: ", how_to_use.children, "\n")
     if how_to_use:
-        print(how_to_use.div.div.text.encode(charset))
-    """for stuff in how_to_use.children:
-        print(stuff)"""
-    pictures = soup.find_all('img', class_='css-1rovmyu e65zztl0')
-    for picture in pictures:
-        print("Picture: ", picture['src'] + "\n")
+        # print(how_to_use.div.div.text.encode(charset))
+        how_to_use = how_to_use.div.div.text.encode(charset)
 
-    """except Exception as e:
-        print("Error: Something went wrong when building the product object: ", e)"""
+    # Sets a list of pictures
+    pictures_found = soup.find_all('img', class_='css-1rovmyu e65zztl0')
+    pictures = []
+    for picture_link in pictures_found:
+        prefix = "https://www.sephora.com"
+        if prefix not in picture_link:
+            picture_link = f"{prefix}{picture_link['src']}"
+        # print("Picture: ", picture['src'] + "\n")
+        pictures.append(picture_link)
 
-    # return
+    # Writes the info found for the product in a CSV file
+    write_to_csv(name, "Maquillage", price, pros, description, ingredients, how_to_use, pictures)
+
+
+def write_to_csv(name, category, price, pros, desc, ingredients, how_to_use, pictures):
+    with open('./products.csv', 'a+', newline='') as csv_file:
+        if name in csv_file:
+            return
+        products_csv = csv.writer(csv_file, delimiter=';', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+        products_csv.writerow([name, category, price, pros, desc, ingredients, how_to_use, pictures])
+        csv_file.close()
 
 
 def main():
@@ -130,7 +138,6 @@ def main():
         while len(a_tags) < 12:
             dom = get_content(driver, url)
             a_tags = get_a_tags(dom)
-            print("A tags qty: ", len(a_tags))
         product_links = get_product_links(a_tags)
         print("Products qty", len(product_links))
         for product_link in product_links:
