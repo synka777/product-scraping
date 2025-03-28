@@ -146,10 +146,10 @@ def get_product_details(driver, url):
 
 def main():
     urls_to_scrape = [
-        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=1"#,
-        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=2",
-        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
-        # "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=1",
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=2",
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=3",
+        "https://www.sephora.com/ca/fr/shop/foundation-makeup?currentPage=4"
     ]
     driver = webdriver.Firefox(executable_path="./geckodriver.exe")
     href_list_to_scrap = []
